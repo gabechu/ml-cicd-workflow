@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "ml-cicd-workflow"
+version = "0.1.0"
+description = ""
+authors = ["skip"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+pandas = "^2.2.3"
+scikit-learn = "^1.5.2"
+google-cloud = "^0.34.0"
+kfp = "^2.9.0"
+model-registry = "^0.2.9"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.7.0"
+mypy = "^1.12.1"
+black = "^24.10.0"
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

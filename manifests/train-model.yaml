@@ -1,0 +1,56 @@
+---
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  namespace: kubeflow
+  name: train-model
+spec:
+  objective:
+    type: minimize
+    objectiveMetricName: mse
+  algorithm:
+    algorithmName: bayesianoptimization
+  parallelTrialCount: 3
+  maxTrialCount: 12
+  maxFailedTrialCount: 3
+  parameters:
+    - name: n-estimators
+      parameterType: int
+      feasibleSpace:
+        min: "100"
+        max: "400"
+        step: "100"
+  trialTemplate:
+    primaryContainerName: train-model-container
+    trialParameters:
+      - name: nEstimators
+        description: Number of estimators for the training model
+        reference: n-estimators
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          spec:
+            containers:
+              - name: train-model-container
+                image: train-model:latest
+                imagePullPolicy: Never
+                command:
+                  - "poetry"
+                  - "run"
+                  - "python"
+                  - "train_model.py"
+                  - "--n-estimators=${trialParameters.nEstimators}"
+                resources:
+                  limits:
+                    memory: "500Mi"
+                    cpu: "0.5"
+                volumeMounts:
+                  - name: model-storage
+                    mountPath: /mnt/models
+            volumes:
+              - name: model-storage
+                persistentVolumeClaim:
+                  claimName: model-storage
+            restartPolicy: Never

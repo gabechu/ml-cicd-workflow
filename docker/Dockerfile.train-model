@@ -1,0 +1,19 @@
+# Use Python base image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY poetry.lock .
+COPY pyproject.toml .
+
+RUN pip install poetry
+RUN poetry install --without dev
+
+# Copy your training script and data
+COPY src/training/train_model.py .
+COPY src/training/boston.csv .
+
+# Run the training script
+ENTRYPOINT ["poetry", "run", "python", "train_model.py"]
