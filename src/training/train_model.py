@@ -15,13 +15,11 @@ from sklearn.model_selection import train_test_split
 logging.basicConfig(level=logging.INFO)
 
 
-registry = ModelRegistry(
-    server_address="http://model-registry-service.kubeflow.svc.cluster.local", port=8080, author="wei", is_secure=False
-)
-
-
 def _load_data() -> tuple[np.ndarray, np.ndarray]:
-    raw_df = pd.read_csv("boston.csv", sep="\s+", skiprows=22, header=None)
+    try:
+        raw_df = pd.read_csv("boston.csv", sep="\s+", skiprows=22, header=None)
+    except:
+        raw_df = pd.read_csv("src/training/boston.csv", sep="\s+", skiprows=22, header=None)
     X = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
     y = raw_df.values[1::2, 2]
     return X, y
@@ -39,7 +37,9 @@ def _persist_model(model):
     return model_filename
 
 
-def train_random_forest(n_estimators: int, max_depth: int, min_samples_split: int, min_samples_leaf: int) -> float:
+def train_random_forest(
+    n_estimators: int, max_depth: int, min_samples_split: int, min_samples_leaf: int, registry: ModelRegistry
+) -> float:
     X, y = _load_data()
 
     # Split the data into training and testing sets
@@ -89,9 +89,17 @@ if __name__ == "__main__":
     parser.add_argument("--min-samples-leaf", type=int, default=1, help="Minimum samples required to be at a leaf node")
     args = parser.parse_args()
 
+    registry = ModelRegistry(
+        server_address="http://model-registry-service.kubeflow.svc.cluster.local",
+        port=8080,
+        author="wei",
+        is_secure=False,
+    )
+
     train_random_forest(
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
         min_samples_split=args.min_samples_split,
         min_samples_leaf=args.min_samples_leaf,
+        registry=registry,
     )
