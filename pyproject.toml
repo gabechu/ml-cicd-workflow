@@ -12,6 +12,8 @@ scikit-learn = "^1.5.2"
 google-cloud = "^0.34.0"
 kfp = "^2.9.0"
 model-registry = "^0.2.9"
+fastapi = "^0.115.4"
+uvicorn = "^0.32.0"
 
 
 [tool.poetry.group.dev.dependencies]

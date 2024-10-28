@@ -1,1 +1,17 @@
-{"old_model": {"mse": 50.239489, "version": "v0.1.0_eef246ea", "uri": "pvc://model-storage//mnt/models/random_forest_model_20241027_064949_15275863.joblib"}, "new_model": {"mse": 40.134197, "version": "v0.1.0_46c6ef63", "uri": "random_forest_model_20241027_114116_dc0a6d32.joblib"}}
+{
+    "old_model": {
+        "mse": 50.239489,
+        "version": "v0.1.0_eef246ea",
+        "uri": "pvc://model-storage//mnt/models/random_forest_model_20241027_064949_15275863.joblib"
+    },
+    "new_model": {
+        "mse": 40.134197,
+        "version": "v0.1.0_46c6ef63",
+        "uri": "random_forest_model_20241027_114116_dc0a6d32.joblib"
+    },
+    "prod_model": {
+        "mse": 40.134197,
+        "version": "v0.1.0_46c6ef63",
+        "uri": "random_forest_model_20241027_114116_dc0a6d32.joblib"
+    }
+}

@@ -1,11 +1,10 @@
 name: Deploy to Minikube
 
 on:
-  pull_request_target:
-    types:
-      - closed
-    branches:
-      - main
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   minikube-test:
@@ -69,7 +68,25 @@ jobs:
     - name: Run update script
       run: |
         python scripts/update_deploy_details.py
- 
+
+    - name: Compare models and extract URI
+      id: model-check
+      run: |
+        # Extract model details
+        NEW_MODEL=$(jq -r '.new_model' deploy_details.json)
+        PROD_MODEL=$(jq -r '.prod_model' deploy_details.json)
+        
+        # Compare models
+        if [ "$NEW_MODEL" == "$PROD_MODEL" ]; then
+          echo "Models are identical. No action needed."
+          echo "needs_deployment=false" >> $GITHUB_OUTPUT
+        else
+          echo "Models are different. Deployment needed."
+          NEW_MODEL_URI=$(jq -r '.new_model.uri' deploy_details.json)
+          echo "needs_deployment=true" >> $GITHUB_OUTPUT
+          echo "model_uri=$NEW_MODEL_URI" >> $GITHUB_OUTPUT
+        fi
+
     - name: Cleanup
       if: always()
       run: |
