@@ -1,10 +1,10 @@
 name: Add Deploy Details
 
 on:
-  workflow_dispatch:  # Manual trigger
   push:
-    paths:
-      - 'deploy_details.json'     # Triggers when JSON files change
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: write
