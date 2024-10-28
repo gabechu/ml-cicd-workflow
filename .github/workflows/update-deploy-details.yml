@@ -10,6 +10,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  branch_name: update-deploy-details
+
 jobs:
   add-deploy-details:
     runs-on: ubuntu-latest
@@ -23,7 +26,6 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          echo "branch_name=update-deploy-details-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
           git checkout -b ${{ env.branch_name }}
           
       - name: Update deploy details file
