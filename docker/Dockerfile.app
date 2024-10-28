@@ -15,4 +15,4 @@ COPY ./local_bucket ./local_bucket
 
 EXPOSE 8000
 
-CMD ["poetry", "run", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8005"]
+ENTRYPOINT ["./docker/app_entrypoint.sh"]

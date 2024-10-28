@@ -49,8 +49,6 @@ jobs:
       run: |
         kubectl create -f manifests/train-model.yaml
         sleep 200
-        echo $(kubectl get experiments train-model -n kubeflow -o jsonpath='{.status.conditions[?(@.type=="Running")].status}')
-        kubectl get events -n kubeflow
 
     - name: List Files
       run: |
@@ -92,12 +90,16 @@ jobs:
       run: |
         # Stop minikube to free up Docker daemon
         eval $(minikube docker-env -u)
+
+        # Extract model filename from URI
+        MODEL_FILE_NAME=$(basename ${{ steps.model-check.outputs.model_uri }})
+        echo "Extracted MODEL_FILE_NAME: $MODEL_FILE_NAME"
         
         # Build the service container using host Docker
         docker build -t boston-housing-api -f docker/Dockerfile.app .
         
         # Deploy the service on host machine
-        docker run -d -p 8005:8005 --name boston-housing-service boston-housing-api
+        docker run -d -p 8005:8005 --name boston-housing-service boston-housing-api "$MODEL_FILE_NAME"
         
         # Wait for service to be ready
         sleep 10

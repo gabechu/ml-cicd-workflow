@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import numpy as np
@@ -9,8 +10,13 @@ from src.app.schemas import HousePredictionInput, HousePredictionOutput
 app = FastAPI(title="Boston House Price Prediction API")
 
 
-def load_model(model_path):
-    model_path = Path("local_bucket/random_forest_model_20241027_235910_19892a47.joblib")
+def load_model(model_file_name):
+    # Get model file name from environment variable
+    MODEL_FILE_NAME = os.getenv("MODEL_FILE_NAME")
+    if not MODEL_FILE_NAME:
+        raise ValueError("MODEL_FILE_NAME environment variable is required")
+
+    model_path = Path(f"local_bucket/{MODEL_FILE_NAME}")
     return load(model_path)
 
 
