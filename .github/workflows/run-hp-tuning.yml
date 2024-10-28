@@ -96,10 +96,10 @@ jobs:
         echo "Extracted MODEL_FILE_NAME: $MODEL_FILE_NAME"
         
         # Build the service container using host Docker
-        docker build -t boston-housing-api -f docker/Dockerfile.app .
+        docker build --build-arg MODEL_FILE_NAME="$MODEL_FILE_NAME" -t boston-housing-api -f docker/Dockerfile.app .
         
         # Deploy the service on host machine
-        docker run -d -p 8005:8005 --name boston-housing-service boston-housing-api "$MODEL_FILE_NAME"
+        docker run -d -p 8005:8005 --name boston-housing-service boston-housing-api
         
         # Wait for service to be ready
         sleep 10
@@ -112,6 +112,30 @@ jobs:
         else
           echo "Service deployed and healthy"
         fi
+
+    - name: Test Prediction Endpoint
+      if: steps.model-check.outputs.needs_deployment == 'true'
+      run: |
+        echo "Testing prediction endpoint..."
+        prediction_response=$(curl -s -X POST http://localhost:8005/predict \
+          -H "Content-Type: application/json" \
+          -d '{
+              "CRIM": 0.00632,
+              "ZN": 18.0,
+              "INDUS": 2.31,
+              "CHAS": 0.0,
+              "NOX": 0.538,
+              "RM": 6.575,
+              "AGE": 65.2,
+              "DIS": 4.0900,
+              "RAD": 1.0,
+              "TAX": 296.0,
+              "PTRATIO": 15.3,
+              "B": 396.90,
+              "LSTAT": 4.98
+          }')
+        
+        echo "Prediction response: $prediction_response"
 
     - name: Cleanup
       if: always()
