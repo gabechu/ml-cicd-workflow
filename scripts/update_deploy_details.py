@@ -1,8 +1,16 @@
 import json
+import subprocess
+import time
 
 from model_registry import ModelRegistry
 
 DEPLOY_DETAILS_FILE = "deploy_details.json"
+
+
+def start_port_forward():
+    cmd = ["kubectl", "port-forward", "svc/model-registry-service", "-n", "kubeflow", "8081:8080"]
+    process = subprocess.Popen(cmd)
+    return process
 
 
 def get_best_version(registry: ModelRegistry) -> str:
@@ -40,10 +48,26 @@ def update_deploy_model(best_version: dict):
         }
         with open(DEPLOY_DETAILS_FILE, "w") as f:
             json.dump(updated_details, f)
+        print(updated_details)
         print("Updated deploy file!")
 
 
+def main():
+    # Start port-forwarding in background
+    port_forward_process = start_port_forward()
+
+    # Wait a bit for port-forward to establish
+    time.sleep(5)
+
+    try:
+        registry = ModelRegistry(server_address="http://localhost", port=8081, author="wei", is_secure=False)
+        best_version = get_best_version(registry)
+        update_deploy_model(best_version)
+    finally:
+        # Clean up port-forward process
+        port_forward_process.terminate()
+        port_forward_process.wait()
+
+
 if __name__ == "__main__":
-    registry = ModelRegistry(server_address="http://localhost", port=8081, author="wei", is_secure=False)
-    best_version = get_best_version(registry)
-    update_deploy_model(best_version)
+    main()

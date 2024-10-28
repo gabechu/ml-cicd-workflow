@@ -11,5 +11,5 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: standard
   hostPath:
-    path: "/local_bucket"
+    path: "/mounted-workspace"
     type: DirectoryOrCreate
