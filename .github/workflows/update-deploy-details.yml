@@ -23,8 +23,8 @@ jobs:
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
-          branch_name="update-deploy-details-$(date +%Y%m%d-%H%M%S)"
-          git checkout -b $branch_name
+          echo "branch_name=update-deploy-details-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+          git checkout -b ${{ env.branch_name }}
           
       - name: Update deploy details file
         run: |
@@ -45,7 +45,7 @@ jobs:
         run: |
           git add deploy_details.json
           git commit -m "Update deploy details JSON file"
-          git push origin HEAD
+          git push origin ${{ env.branch_name }}
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
