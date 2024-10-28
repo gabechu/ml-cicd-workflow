@@ -1,10 +1,11 @@
 name: Deploy to Minikube
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
 
 jobs:
   minikube-test:
@@ -140,4 +141,8 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
+        # Clean up the deployed service if it exists
+        docker stop boston-housing-service || true
+        docker rm boston-housing-service || true
+        # Clean up minikube
         minikube delete
