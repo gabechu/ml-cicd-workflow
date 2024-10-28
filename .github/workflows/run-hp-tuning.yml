@@ -87,6 +87,30 @@ jobs:
           echo "model_uri=$NEW_MODEL_URI" >> $GITHUB_OUTPUT
         fi
 
+    - name: Deploy Model Service
+      if: steps.model-check.outputs.needs_deployment == 'true'
+      run: |
+        # Stop minikube to free up Docker daemon
+        eval $(minikube docker-env -u)
+        
+        # Build the service container using host Docker
+        docker build -t boston-housing-api -f docker/Dockerfile.app .
+        
+        # Deploy the service on host machine
+        docker run -d -p 8005:8005 --name boston-housing-service boston-housing-api
+        
+        # Wait for service to be ready
+        sleep 10
+        
+        # Test service health
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8005/health)
+        if [ "$response" != "200" ]; then
+          echo "Service health check failed with status: $response"
+          exit 1
+        else
+          echo "Service deployed and healthy"
+        fi
+
     - name: Cleanup
       if: always()
       run: |
