@@ -8,7 +8,7 @@ on:
       - main
 
 jobs:
-  minikube-test:
+  deploy-trained-model:
     runs-on:
       - ubuntu-latest
     
