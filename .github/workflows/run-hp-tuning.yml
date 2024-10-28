@@ -50,8 +50,6 @@ jobs:
       run: |
         kubectl create -f manifests/train-model.yaml
         sleep 200
-        echo $(kubectl get experiments train-model -n kubeflow -o jsonpath='{.status.conditions[?(@.type=="Running")].status}')
-        kubectl get events -n kubeflow
 
     - name: List Files
       run: |
@@ -69,8 +67,82 @@ jobs:
     - name: Run update script
       run: |
         python scripts/update_deploy_details.py
- 
+
+    - name: Compare models and extract URI
+      id: model-check
+      run: |
+        # Extract model details
+        NEW_MODEL=$(jq -r '.new_model' deploy_details.json)
+        PROD_MODEL=$(jq -r '.prod_model' deploy_details.json)
+        
+        # Compare models
+        if [ "$NEW_MODEL" == "$PROD_MODEL" ]; then
+          echo "Models are identical. No action needed."
+          echo "needs_deployment=false" >> $GITHUB_OUTPUT
+        else
+          echo "Models are different. Deployment needed."
+          NEW_MODEL_URI=$(jq -r '.new_model.uri' deploy_details.json)
+          echo "needs_deployment=true" >> $GITHUB_OUTPUT
+          echo "model_uri=$NEW_MODEL_URI" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Deploy Model Service
+      if: steps.model-check.outputs.needs_deployment == 'true'
+      run: |
+        # Stop minikube to free up Docker daemon
+        eval $(minikube docker-env -u)
+
+        # Extract model filename from URI
+        MODEL_FILE_NAME=$(basename ${{ steps.model-check.outputs.model_uri }})
+        echo "Extracted MODEL_FILE_NAME: $MODEL_FILE_NAME"
+        
+        # Build the service container using host Docker
+        docker build --build-arg MODEL_FILE_NAME="$MODEL_FILE_NAME" -t boston-housing-api -f docker/Dockerfile.app .
+        
+        # Deploy the service on host machine
+        docker run -d -p 8005:8005 --name boston-housing-service boston-housing-api
+        
+        # Wait for service to be ready
+        sleep 10
+        
+        # Test service health
+        response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8005/health)
+        if [ "$response" != "200" ]; then
+          echo "Service health check failed with status: $response"
+          exit 1
+        else
+          echo "Service deployed and healthy"
+        fi
+
+    - name: Test Prediction Endpoint
+      if: steps.model-check.outputs.needs_deployment == 'true'
+      run: |
+        echo "Testing prediction endpoint..."
+        prediction_response=$(curl -s -X POST http://localhost:8005/predict \
+          -H "Content-Type: application/json" \
+          -d '{
+              "CRIM": 0.00632,
+              "ZN": 18.0,
+              "INDUS": 2.31,
+              "CHAS": 0.0,
+              "NOX": 0.538,
+              "RM": 6.575,
+              "AGE": 65.2,
+              "DIS": 4.0900,
+              "RAD": 1.0,
+              "TAX": 296.0,
+              "PTRATIO": 15.3,
+              "B": 396.90,
+              "LSTAT": 4.98
+          }')
+        
+        echo "Prediction response: $prediction_response"
+
     - name: Cleanup
       if: always()
       run: |
+        # Clean up the deployed service if it exists
+        docker stop boston-housing-service || true
+        docker rm boston-housing-service || true
+        # Clean up minikube
         minikube delete

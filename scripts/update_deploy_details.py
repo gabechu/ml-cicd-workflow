@@ -39,6 +39,7 @@ def update_deploy_model(best_version: dict):
     details = _get_deploy_details()
     updated_details = dict()
     updated_details["old_model"] = details["new_model"]
+    updated_details["prod_model"] = details["prod_model"]
 
     if details["new_model"]["mse"] > best_version["mse"]:
         updated_details["new_model"] = {
@@ -48,8 +49,7 @@ def update_deploy_model(best_version: dict):
         }
         with open(DEPLOY_DETAILS_FILE, "w") as f:
             json.dump(updated_details, f)
-        print(updated_details)
-        print("Updated deploy file!")
+        print(f"Updated deploy file! {updated_details}")
 
 
 def main():
