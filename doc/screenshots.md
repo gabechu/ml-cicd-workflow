@@ -1,11 +1,13 @@
-# CI/CD Pipeline Execution Screenshots
+# [CI/CD Pipeline Execution Screenshots](https://github.com/gabechu/ml-cicd-workflow/blob/main/.github/workflows/deploy-trained-model.yml)
 1. Setup Kubernetes with Minikube
 1. Install Katib and Model Registry
 1. Mount Artifact Storage
 1. Activate Model Training
 1. Compare Training Results
-1. Deploy Model Service
-1. Test Prediction Endpoint
+    - If the new model demonstrates better performance, proceed with the following steps:
+        1. Deploy Model Service
+        1. Test Prediction Endpoint
+    - Else jump to step 6
 1. Clean Up
 
 ![alt text](github_cicd.png)
