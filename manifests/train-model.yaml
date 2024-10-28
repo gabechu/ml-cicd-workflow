@@ -10,9 +10,9 @@ spec:
     objectiveMetricName: mse
   algorithm:
     algorithmName: bayesianoptimization
-  parallelTrialCount: 3
-  maxTrialCount: 12
-  maxFailedTrialCount: 3
+  parallelTrialCount: 2
+  maxTrialCount: 2
+  maxFailedTrialCount: 2
   parameters:
     - name: n-estimators
       parameterType: int
@@ -43,9 +43,12 @@ spec:
                   - "train_model.py"
                   - "--n-estimators=${trialParameters.nEstimators}"
                 resources:
-                  limits:
+                  requests:
                     memory: "500Mi"
-                    cpu: "0.5"
+                    cpu: "500m"
+                  limits:
+                    memory: "1Gi"
+                    cpu: "1"
                 volumeMounts:
                   - name: model-storage
                     mountPath: /mnt/models

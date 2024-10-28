@@ -1,0 +1,76 @@
+name: Deploy to Minikube
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  minikube-test:
+    runs-on:
+      - ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Create local bucket directory
+      run: |
+        mkdir -p ${{ github.workspace }}/local_bucket
+
+    - name: Install Minikube
+      run: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        sudo install minikube-linux-amd64 /usr/local/bin/minikube
+        minikube start --driver=docker --mount=true --mount-string="${{ github.workspace }}/local_bucket:/mounted-workspace"
+    - name: Install Katib
+      run: |
+        kubectl apply -k "github.com/kubeflow/katib.git/manifests/v1beta1/installs/katib-standalone?ref=v0.17.0"
+        kubectl wait --for=condition=available -n kubeflow deployment/katib-controller --timeout=1m
+
+    - name: Install Model Registry
+      run: |
+        kubectl apply -k "https://github.com/kubeflow/model-registry/manifests/kustomize/overlays/db?ref=v0.2.3-alpha"
+        kubectl wait --for=condition=available -n kubeflow deployment/model-registry-deployment --timeout=2m
+
+    - name: Configure Storage
+      run: |
+        kubectl apply -f manifests/create_pv.yaml
+        kubectl apply -f manifests/create_pvc.yaml
+
+    - name: Build Training Container
+      run: |
+        # Configure docker to use minikube's Docker daemon
+        eval $(minikube docker-env)
+        # Build the training container
+        docker build -t train-model:latest -f docker/Dockerfile.train-model .
+
+    - name: Run Training Job
+      run: |
+        kubectl create -f manifests/train-model.yaml
+        sleep 200
+        echo $(kubectl get experiments train-model -n kubeflow -o jsonpath='{.status.conditions[?(@.type=="Running")].status}')
+        kubectl get events -n kubeflow
+
+    - name: List Files
+      run: |
+        ls -la ${{ github.workspace }}/local_bucket
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install model-registry dependency
+      run: |
+        pip install "model-registry==0.2.9"
+
+    - name: Run update script
+      run: |
+        python scripts/update_deploy_details.py
+ 
+    - name: Cleanup
+      if: always()
+      run: |
+        minikube delete
